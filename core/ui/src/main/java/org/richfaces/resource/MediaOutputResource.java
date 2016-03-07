@@ -25,6 +25,7 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 import javax.el.MethodExpression;
 import javax.el.ValueExpression;
@@ -43,6 +44,7 @@ import com.google.common.base.Strings;
  */
 @DynamicResource
 public class MediaOutputResource extends AbstractUserResource implements StateHolder, CacheableResource {
+	private static final String PARENTHESES = "[^\\(]*";
     private String contentType;
     private boolean cacheable;
     private MethodExpression contentProducer;
@@ -58,6 +60,11 @@ public class MediaOutputResource extends AbstractUserResource implements StateHo
     private String fileName;
 
     public void encode(FacesContext facesContext) throws IOException {
+    	String expr = contentProducer.getExpressionString();
+    	if (!Pattern.matches(PARENTHESES, expr)) { 
+    		// method expression must not be executed
+    		throw new IllegalArgumentException("Expression \"" + expr + "\" contains parentheses.");
+    	}
         OutputStream outStream = facesContext.getExternalContext().getResponseOutputStream();
         contentProducer.invoke(facesContext.getELContext(), new Object[] { outStream, userData });
     }
